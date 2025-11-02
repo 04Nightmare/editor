@@ -4,34 +4,34 @@
 #include<termios.h>
 #include<stdlib.h>
 #include<ctype.h>
+
+
 #include "errorHandle.h"
+#include "windowSize.h"
+
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 
-struct termios termi_settings;
-
-/*
-void err_handle(const char *s){
-	write(STDOUT_FILENO, "\x1b[2J", 4);
-        write(STDOUT_FILENO, "\x1b[H", 3);
-	perror(s);
-	exit(1);
-}
-*/
+struct editorConfig{
+	int screenrows;
+	int screencols;
+	struct termios termi_settings;
+};
+struct editorConfig E;
 
 
 void disableRawMode(){
-	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &termi_settings) == -1)
+	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.termi_settings) == -1)
 		err_handle("tcsetattr");
 }
 
 
 void enableRawMode(){
-	if (tcgetattr(STDIN_FILENO, &termi_settings) == -1) err_handle("tcsetattr");
+	if (tcgetattr(STDIN_FILENO, &E.termi_settings) == -1) err_handle("tcsetattr");
 	atexit(disableRawMode);
 
-	struct termios raw = termi_settings;
+	struct termios raw = E.termi_settings;
 	raw.c_iflag &= ~(ICRNL | IXON);
 	raw.c_oflag &= ~(OPOST);
 	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
@@ -52,9 +52,19 @@ char editorReadKey() {
 }
 
 
+void editorDrawRows() {
+	int y;
+	for(y = 0; y < E.screenrows; y++){
+		write(STDOUT_FILENO, "~\r\n", 3);
+	}
+}
+
 
 void editorRefreshScreen() {
 	write(STDOUT_FILENO, "\x1b[2J", 4);
+	write(STDOUT_FILENO, "\x1b[H", 3);
+
+	editorDrawRows();
 	write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
@@ -72,8 +82,14 @@ void editorKeyPress() {
 }
 
 
+void initialEditor() {
+	if(getWindowSize(&E.screenrows, &E.screencols) == -1) err_handle("getWindowSize");
+}
+
+
 int main(){
 	enableRawMode();
+	initialEditor();
 
 	while (1){
 		/*char c = '\0';
