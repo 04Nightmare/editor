@@ -4,19 +4,21 @@
 #include<termios.h>
 #include<stdlib.h>
 #include<ctype.h>
+#include "errorHandle.h"
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 
 struct termios termi_settings;
 
-
+/*
 void err_handle(const char *s){
 	write(STDOUT_FILENO, "\x1b[2J", 4);
         write(STDOUT_FILENO, "\x1b[H", 3);
 	perror(s);
 	exit(1);
 }
+*/
 
 
 void disableRawMode(){
@@ -38,6 +40,7 @@ void enableRawMode(){
 
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) err_handle("tcsetattr");
 }
+
 
 char editorReadKey() {
 	int nread;
