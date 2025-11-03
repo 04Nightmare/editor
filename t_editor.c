@@ -4,10 +4,12 @@
 #include<termios.h>
 #include<stdlib.h>
 #include<ctype.h>
+#include<string.h>
 
 
 #include "errorHandle.h"
 #include "windowSize.h"
+#include "appendBuffer.h"
 
 
 #define CTRL_KEY(k) ((k) & 0x1f)
@@ -52,20 +54,28 @@ char editorReadKey() {
 }
 
 
-void editorDrawRows() {
+
+void editorDrawRows(struct abuffer *ab) {
 	int y;
 	for(y = 0; y < E.screenrows; y++){
-		write(STDOUT_FILENO, "~\r\n", 3);
+		appendBuffer(ab, "~", 1);
+
+		if(y < E.screenrows - 1) {
+				appendBuffer(ab, "~", 2)
+			}
 	}
 }
 
 
 void editorRefreshScreen() {
-	write(STDOUT_FILENO, "\x1b[2J", 4);
-	write(STDOUT_FILENO, "\x1b[H", 3);
+	struct abuffer ab = ABUFFER_INIT;
+	appendBuffer(&ab, "\x1b[2J", 4);
+	appendBuffer(&ab, "\x1b[H", 3);
 
 	editorDrawRows();
-	write(STDOUT_FILENO, "\x1b[H", 3);
+	appendBuffer(&ab, "\x1b[H", 3);
+	write(STDOUT_FILENO, ab.b, ab.len);
+	freeBuff(&ab);
 }
 
 
@@ -92,15 +102,6 @@ int main(){
 	initialEditor();
 
 	while (1){
-		/*char c = '\0';
-		if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) err_handle("read");
-		if(iscntrl(c)){
-			printf("%d\r\n", c);
-		}else{
-			printf("%d ('%c')\r\n", c, c);
-		}
-		if (c == CTRL_KEY('q')) break;
-		*/
 
 		editorRefreshScreen();
 		editorKeyPress();
