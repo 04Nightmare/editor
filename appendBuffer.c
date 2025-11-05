@@ -1,11 +1,8 @@
 #include<stdlib.h>
 #include<string.h>
 
-struct abuffer {
-	char *b;
-	int len;
-};
-#define ABUFFER_INIT {NULL, 0}
+#include "appendBuffer.h"
+
 
 void appendBuffer(struct abuffer *ab, const char *s, int len) {
 	char *new = realloc(ab->b, ab->len + len);
@@ -19,4 +16,6 @@ void appendBuffer(struct abuffer *ab, const char *s, int len) {
 
 void freeBuff(struct abuffer *ab) {
 	free(ab->b);
+	ab->b = NULL;
+	ab->len = 0;
 }
