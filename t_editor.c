@@ -6,33 +6,30 @@
 #include<ctype.h>
 #include<string.h>
 
+#include "editorConfig.h"
 #include "errorHandle.h"
 #include "windowSize.h"
 #include "appendBuffer.h"
+#include "fileIO.h"
 
 #define EDITOR_VERSION "v1.0"
 
 #define CTRL_KEY(k) ((k) & 0x1f)
+
+struct editorConfig E;
 
 enum editorKey {
 	ARROW_LEFT = 1000,
 	ARROW_RIGHT,
 	ARROW_UP,
 	ARROW_DOWN,
+	DEL_KEY,
 	HOME_KEY,
 	END_KEY,
 	PAGE_UP,
 	PAGE_DOWN,
 };
 
-
-struct editorConfig{
-	int cx, cy;
-	int screenrows;
-	int screencols;
-	struct termios termi_settings;
-};
-struct editorConfig E;
 
 
 void disableRawMode(){
@@ -75,6 +72,7 @@ int editorReadKey() {
 				if (seq[2] == '~'){
 					switch (seq[1]) {
 						case '1': return HOME_KEY;
+						case '3': return DEL_KEY;
 						case '4': return END_KEY;
 						case '5': return PAGE_UP;
 						case '6': return PAGE_DOWN;
@@ -108,19 +106,25 @@ int editorReadKey() {
 void editorDrawRows(struct abuffer *ab) {
 	int y;
 	for(y = 0; y < E.screenrows; y++){
-		if (y == E.screenrows / 3) {
-			char message[80];
-			int messagelen = snprintf(message, sizeof(message), "Editor --version %s", EDITOR_VERSION);
-			if (messagelen > E.screencols) messagelen = E.screencols;
-			int padding = (E.screencols - messagelen) / 2;
-			if (padding) {
-				appendBuffer(ab, "~", 1);
-				padding--;
+		if (y >= E.numrows) {
+			if (y == E.screenrows / 3) {
+				char message[80];
+				int messagelen = snprintf(message, sizeof(message), "Editor --version %s", EDITOR_VERSION);
+				if (messagelen > E.screencols) messagelen = E.screencols;
+				int padding = (E.screencols - messagelen) / 2;
+				if (padding) {
+					appendBuffer(ab, "~", 1);
+					padding--;
+				}
+				while (padding--) appendBuffer(ab, " ", 1);
+				appendBuffer(ab, message, messagelen);
+			}else{
+				appendBuffer(ab, "~", 1);	
 			}
-			while (padding--) appendBuffer(ab, " ", 1);
-			appendBuffer(ab, message, messagelen);
-		}else{
-			appendBuffer(ab, "~", 1);	
+		}else {
+			int len = E.row.size;
+			if (len > E.screencols) len = E.screencols;
+			appendBuffer(ab, E.row.chars, len);
 		}
 
 		appendBuffer(ab, "\x1b[K", 3);
@@ -222,6 +226,7 @@ void editorKeyPress() {
 void initialEditor() {
 	E.cx = 0;
 	E.cy = 0;
+	E.numrows = 0;
 	if(getWindowSize(&E.screenrows, &E.screencols) == -1) err_handle("getWindowSize");
 }
 
@@ -229,6 +234,7 @@ void initialEditor() {
 int main(){
 	enableRawMode();
 	initialEditor();
+	editorOpen();
 
 	while (1){
 
