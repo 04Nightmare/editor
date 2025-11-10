@@ -2,6 +2,6 @@
 #define FILEIO_H
 
 
-void editorOpen(void);
+void editorOpen(char *filename);
 
 #endif

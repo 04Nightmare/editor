@@ -6,14 +6,14 @@
 typedef struct editorRow {
     int size;
     char *chars;
-};
+}editorRow;
 
 typedef struct editorConfig{
 	int cx, cy;
 	int screenrows;
 	int screencols;
     int numrows;
-    struct editorRow row;
+    editorRow *row;
 	struct termios termi_settings;
 };
 extern struct editorConfig E;

@@ -1,3 +1,6 @@
+#define _DEFAULT_SOURCE
+#define _GNU_SOURCE
+
 #include<stdio.h>
 #include<unistd.h>
 #include<errno.h>
@@ -29,7 +32,6 @@ enum editorKey {
 	PAGE_UP,
 	PAGE_DOWN,
 };
-
 
 
 void disableRawMode(){
@@ -107,7 +109,7 @@ void editorDrawRows(struct abuffer *ab) {
 	int y;
 	for(y = 0; y < E.screenrows; y++){
 		if (y >= E.numrows) {
-			if (y == E.screenrows / 3) {
+			if (y == E.screenrows / 3 && E.numrows == 0) {
 				char message[80];
 				int messagelen = snprintf(message, sizeof(message), "Editor --version %s", EDITOR_VERSION);
 				if (messagelen > E.screencols) messagelen = E.screencols;
@@ -122,9 +124,9 @@ void editorDrawRows(struct abuffer *ab) {
 				appendBuffer(ab, "~", 1);	
 			}
 		}else {
-			int len = E.row.size;
+			int len = E.row[y].size;
 			if (len > E.screencols) len = E.screencols;
-			appendBuffer(ab, E.row.chars, len);
+			appendBuffer(ab, E.row[y].chars, len);
 		}
 
 		appendBuffer(ab, "\x1b[K", 3);
@@ -227,17 +229,19 @@ void initialEditor() {
 	E.cx = 0;
 	E.cy = 0;
 	E.numrows = 0;
+	E.row = NULL;
 	if(getWindowSize(&E.screenrows, &E.screencols) == -1) err_handle("getWindowSize");
 }
 
 
-int main(){
+int main(int argc, char *argv[]) {
 	enableRawMode();
 	initialEditor();
-	editorOpen();
+	if (argc >= 2){
+		editorOpen(argv[1]);
+	}
 
 	while (1){
-
 		editorRefreshScreen();
 		editorKeyPress();
 	}
