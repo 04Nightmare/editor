@@ -10,6 +10,8 @@ typedef struct editorRow {
 
 typedef struct editorConfig{
 	int cx, cy;
+    int rowoffset;
+    int coloffset;
 	int screenrows;
 	int screencols;
     int numrows;

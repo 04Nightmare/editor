@@ -92,7 +92,7 @@ int editorReadKey() {
 					case 'F': return END_KEY;
 				} 
 			}
-		}else if (seq[0] = 'O'){
+		}else if (seq[0] == 'O'){
 			switch (seq[1]) {
 				case 'H': return HOME_KEY;
 				case 'F': return END_KEY;
@@ -104,11 +104,26 @@ int editorReadKey() {
 	}
 }
 
+void editorScroll() {
+	if (E.cy < E.rowoffset) {
+		E.rowoffset = E.cy;
+	}
+	if (E.cy >= E.rowoffset + E.screenrows) {
+		E.rowoffset = E.cy - E.screenrows + 1;
+	}
+	if (E.cx < E.coloffset) {
+		E.coloffset = E.cx;
+	}
+	if (E.cx >= E.coloffset + E.screencols) {
+		E.coloffset = E.cx - E.screencols + 1;
+	}
+}
 
 void editorDrawRows(struct abuffer *ab) {
 	int y;
 	for(y = 0; y < E.screenrows; y++){
-		if (y >= E.numrows) {
+		int filerow = y + E.rowoffset;
+		if (filerow >= E.numrows) {
 			if (y == E.screenrows / 3 && E.numrows == 0) {
 				char message[80];
 				int messagelen = snprintf(message, sizeof(message), "Editor --version %s", EDITOR_VERSION);
@@ -124,9 +139,12 @@ void editorDrawRows(struct abuffer *ab) {
 				appendBuffer(ab, "~", 1);	
 			}
 		}else {
-			int len = E.row[y].size;
+			int len = E.row[filerow].size - E.coloffset;
+			if (len < 0) len = 0;
 			if (len > E.screencols) len = E.screencols;
-			appendBuffer(ab, E.row[y].chars, len);
+			if (len > 0 && E.row[filerow].chars){
+				appendBuffer(ab, E.row[filerow].chars + E.coloffset, len); //or just use a reference like &E.row[filerow].chars[E.coloffset]
+			}
 		}
 
 		appendBuffer(ab, "\x1b[K", 3);
@@ -138,6 +156,7 @@ void editorDrawRows(struct abuffer *ab) {
 
 
 void editorRefreshScreen() {
+	editorScroll();
 	struct abuffer ab = ABUFFER_INIT;
 
 	appendBuffer(&ab, "\x1b[?25l", 6);
@@ -146,7 +165,7 @@ void editorRefreshScreen() {
 	editorDrawRows(&ab);
 
 	char buff[32];
-	snprintf(buff, sizeof(buff), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
+	snprintf(buff, sizeof(buff), "\x1b[%d;%dH", (E.cy - E.rowoffset) + 1, (E.cx - E.coloffset) + 1);
 	appendBuffer(&ab, buff, strlen(buff));
 
 
@@ -157,7 +176,10 @@ void editorRefreshScreen() {
 
 
 void editorMoveCursor(int key) {
+	editorRow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
 	int times = E.screenrows;
+
+
 	switch (key) {
 		case ARROW_LEFT:
 			if (E.cx != 0){
@@ -165,7 +187,7 @@ void editorMoveCursor(int key) {
 			}
 			break;
 		case ARROW_RIGHT:
-			if (E.cx != E.screencols - 1){
+			if (row && E.cx < row->size){
 				E.cx++;
 			}
 			break;
@@ -175,7 +197,7 @@ void editorMoveCursor(int key) {
 			}
 			break;
 		case ARROW_DOWN:
-			if (E.cy != E.screenrows - 1){
+			if (E.cy < E.numrows-1){
 				E.cy++;
 			}
 			break;
@@ -188,7 +210,8 @@ void editorMoveCursor(int key) {
 			break;
 		case PAGE_DOWN:
 			while(times--){
-				if (E.cy != E.screenrows - 1){
+				// if (E.cy != E.screenrows - 1){
+				 if (E.cy < E.numrows - 1){
 					E.cy++;
 				}
 			}
@@ -197,8 +220,15 @@ void editorMoveCursor(int key) {
 			E.cx = 0;
 			break;
 		case END_KEY:
-			E.cx = E.screencols - 1;
+			//row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
+			E.cx = row ? row->size : 0;
 			break;
+	}
+
+	row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
+	int rowLength = row ? row->size : 0;
+	if (E.cx > rowLength){
+		E.cx = rowLength;
 	}
 }
 
@@ -228,6 +258,8 @@ void editorKeyPress() {
 void initialEditor() {
 	E.cx = 0;
 	E.cy = 0;
+	E.rowoffset = 0;
+	E.coloffset = 0;
 	E.numrows = 0;
 	E.row = NULL;
 	if(getWindowSize(&E.screenrows, &E.screencols) == -1) err_handle("getWindowSize");

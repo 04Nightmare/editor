@@ -1,7 +1,7 @@
 #ifndef APPENDBUFFER_H
 #define APPENDBUFFER_H
 
-struct abuffer {
+typedef struct abuffer {
 	char *b;
 	int len;
 };
