@@ -5,11 +5,14 @@
 
 typedef struct editorRow {
     int size;
+    int rsize;
     char *chars;
+    char *render;
 }editorRow;
 
 typedef struct editorConfig{
 	int cx, cy;
+    int rx;
     int rowoffset;
     int coloffset;
 	int screenrows;

@@ -105,17 +105,22 @@ int editorReadKey() {
 }
 
 void editorScroll() {
+	E.rx = 0;
+	if (E.cy < E.numrows){
+		E.rx = CxToRxConvert(&E.row[E.cy], E.cx);
+	}
+
 	if (E.cy < E.rowoffset) {
 		E.rowoffset = E.cy;
 	}
 	if (E.cy >= E.rowoffset + E.screenrows) {
 		E.rowoffset = E.cy - E.screenrows + 1;
 	}
-	if (E.cx < E.coloffset) {
-		E.coloffset = E.cx;
+	if (E.rx < E.coloffset) {
+		E.coloffset = E.rx;
 	}
-	if (E.cx >= E.coloffset + E.screencols) {
-		E.coloffset = E.cx - E.screencols + 1;
+	if (E.rx >= E.coloffset + E.screencols) {
+		E.coloffset = E.rx - E.screencols + 1;
 	}
 }
 
@@ -139,11 +144,11 @@ void editorDrawRows(struct abuffer *ab) {
 				appendBuffer(ab, "~", 1);	
 			}
 		}else {
-			int len = E.row[filerow].size - E.coloffset;
+			int len = E.row[filerow].rsize - E.coloffset;
 			if (len < 0) len = 0;
 			if (len > E.screencols) len = E.screencols;
-			if (len > 0 && E.row[filerow].chars){
-				appendBuffer(ab, E.row[filerow].chars + E.coloffset, len); //or just use a reference like &E.row[filerow].chars[E.coloffset]
+			if (len > 0 && E.row[filerow].render){
+				appendBuffer(ab, E.row[filerow].render + E.coloffset, len); //or just use a reference like &E.row[filerow].chars[E.coloffset]
 			}
 		}
 
@@ -165,7 +170,7 @@ void editorRefreshScreen() {
 	editorDrawRows(&ab);
 
 	char buff[32];
-	snprintf(buff, sizeof(buff), "\x1b[%d;%dH", (E.cy - E.rowoffset) + 1, (E.cx - E.coloffset) + 1);
+	snprintf(buff, sizeof(buff), "\x1b[%d;%dH", (E.cy - E.rowoffset) + 1, (E.rx - E.coloffset) + 1);
 	appendBuffer(&ab, buff, strlen(buff));
 
 
@@ -179,16 +184,22 @@ void editorMoveCursor(int key) {
 	editorRow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
 	int times = E.screenrows;
 
-
 	switch (key) {
 		case ARROW_LEFT:
 			if (E.cx != 0){
 				E.cx--;
+			}else if (E.cy > 0){
+				E.cy--;
+				row = &E.row[E.cy];
+				E.cx = row->size;
 			}
 			break;
 		case ARROW_RIGHT:
 			if (row && E.cx < row->size){
 				E.cx++;
+			}else if (row && E.cx == row->size){
+				E.cy++;
+				E.cx=0;
 			}
 			break;
 		case ARROW_UP:
@@ -258,6 +269,7 @@ void editorKeyPress() {
 void initialEditor() {
 	E.cx = 0;
 	E.cy = 0;
+	E.rx = 0;
 	E.rowoffset = 0;
 	E.coloffset = 0;
 	E.numrows = 0;
