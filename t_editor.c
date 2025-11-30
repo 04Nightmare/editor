@@ -14,6 +14,7 @@
 #include "windowSize.h"
 #include "appendBuffer.h"
 #include "fileIO.h"
+#include "statusBar.h"
 
 #define EDITOR_VERSION "v1.0"
 
@@ -153,9 +154,9 @@ void editorDrawRows(struct abuffer *ab) {
 		}
 
 		appendBuffer(ab, "\x1b[K", 3);
-		if(y < E.screenrows - 1) {
-			appendBuffer(ab, "\r\n", 2);
-		}
+		appendBuffer(ab, "\r\n", 2);
+		//if(y < E.screenrows - 1) {
+		//}
 	}
 }
 
@@ -168,6 +169,8 @@ void editorRefreshScreen() {
 	appendBuffer(&ab, "\x1b[H", 3);
 
 	editorDrawRows(&ab);
+	drawStatusBar(&ab);
+	drawMessageInStatbar(&ab);
 
 	char buff[32];
 	snprintf(buff, sizeof(buff), "\x1b[%d;%dH", (E.cy - E.rowoffset) + 1, (E.rx - E.coloffset) + 1);
@@ -253,9 +256,14 @@ void editorKeyPress() {
 			break;
 
 		case HOME_KEY:
+			E.cx = 0;
+			break;
 		case END_KEY:
+			if(E.cy < E.numrows)
+				E.cx = E.row[E.cy].size;
+			break;
 		case PAGE_UP:
-		case PAGE_DOWN:
+		case PAGE_DOWN:   //maybe also implement here later for up down.
 		case ARROW_UP:
 		case ARROW_DOWN:
 		case ARROW_LEFT:
@@ -274,7 +282,11 @@ void initialEditor() {
 	E.coloffset = 0;
 	E.numrows = 0;
 	E.row = NULL;
+	E.filename = NULL;
+	E.statmessage[0] = '\0';
+	E.statmessage_time = 0;
 	if(getWindowSize(&E.screenrows, &E.screencols) == -1) err_handle("getWindowSize");
+	E.screenrows -= 2;
 }
 
 
@@ -284,6 +296,7 @@ int main(int argc, char *argv[]) {
 	if (argc >= 2){
 		editorOpen(argv[1]);
 	}
+	setStatusMessage("HELP: Ctrl-Q = quit");
 
 	while (1){
 		editorRefreshScreen();

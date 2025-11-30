@@ -59,6 +59,8 @@ void editorAppendRow(char *s, size_t len){
 }
 
 void editorOpen(char *filename) {
+    free(E.filename);
+    E.filename = strdup(filename);
     FILE *fd = fopen(filename, "r");
     if (!fd) err_handle("fopen");
 
