@@ -42,7 +42,6 @@ void editorUpdateRow(editorRow *row) {
     row->rsize = index;
 }
 
-
 void editorAppendRow(char *s, size_t len){
     E.row = realloc(E.row, sizeof(editorRow) * (E.numrows + 1));
 
@@ -76,3 +75,24 @@ void editorOpen(char *filename) {
     free(line);
     fclose(fd);
 }
+
+
+//Write character in file..
+
+void insertCharInRow(editorRow *row, int insertAt, int c){
+    if (insertAt < 0 || insertAt > row->size) insertAt = row->size;
+    row->chars = realloc(row->chars, row->size+2);
+    memmove(&row->chars[insertAt + 1], &row->chars[insertAt], row->size-insertAt+1);
+    row->size++;
+    row->chars[insertAt] = c;
+    editorUpdateRow(row);
+}
+
+void editorInsertChar(int c) {
+    if (E.cy == E.numrows){
+        editorAppendRow("", 0);
+    }
+    insertCharInRow(&E.row[E.cy], E.cx, c);
+    E.cx++;
+}
+

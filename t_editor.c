@@ -270,6 +270,8 @@ void editorKeyPress() {
 		case ARROW_RIGHT:
 			editorMoveCursor(c);
 			break;
+		default:
+			editorInsertChar(c);
 	}
 }
 
