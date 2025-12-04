@@ -4,6 +4,8 @@
 #include<termios.h>
 #include<time.h>
 
+#define CONFIRM_QUIT 3
+
 typedef struct editorRow {
     int size;
     int rsize;
@@ -19,9 +21,10 @@ typedef struct editorConfig{
 	int screenrows;
 	int screencols;
     int numrows;
+    int changed;
     editorRow *row;
     char *filename;
-    char statmessage[80];
+    char statmessage[110];
     time_t statmessage_time;
 	struct termios termi_settings;
 };

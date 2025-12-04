@@ -4,12 +4,17 @@
 #define TAB_STOP_LENGTH 8
 
 #include<sys/types.h>
+#include<errno.h>
+#include<unistd.h>
 #include<string.h>
 #include<stdlib.h>
 #include<stdio.h>
+#include<fcntl.h>
 
 #include "editorConfig.h"
 #include "errorHandle.h"
+
+extern void setStatusMessage(const char *fmt, ...);
 
 int CxToRxConvert(editorRow *row, int cx){
     int rx = 0;
@@ -55,6 +60,7 @@ void editorAppendRow(char *s, size_t len){
     E.row[index].rsize = 0;
     E.row[index].render = NULL;
     editorUpdateRow(&E.row[index]);
+    E.changed++;
 }
 
 void editorOpen(char *filename) {
@@ -74,6 +80,7 @@ void editorOpen(char *filename) {
     }
     free(line);
     fclose(fd);
+    E.changed=0;
 }
 
 
@@ -86,9 +93,10 @@ void insertCharInRow(editorRow *row, int insertAt, int c){
     row->size++;
     row->chars[insertAt] = c;
     editorUpdateRow(row);
+    E.changed++;
 }
 
-void editorInsertChar(int c) {
+void editorWriteChar(int c) {
     if (E.cy == E.numrows){
         editorAppendRow("", 0);
     }
@@ -96,3 +104,42 @@ void editorInsertChar(int c) {
     E.cx++;
 }
 
+
+char *editorRowsToString(int *bufferlen){
+    int totalLen = 0;
+    int j;
+    for(j = 0; j < E.numrows; j++)
+        totalLen += E.row[j].size + 1;
+    *bufferlen = totalLen;
+
+    char *buff = malloc(totalLen);
+    char *p = buff;
+    for (j = 0; j < E.numrows; j++){
+        memcpy(p, E.row[j].chars, E.row[j].size);
+        p += E.row[j].size;
+        *p = '\n';
+        p++;
+    }
+    return buff;
+}
+
+void editorSave(){
+    if(E.filename == NULL) return;
+    int len;
+    char *buf = editorRowsToString(&len);
+    int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
+    if (fd != -1){
+        if(ftruncate(fd ,len) != -1){
+            if (write(fd, buf, len) == len){
+                close(fd);
+                free(buf);
+                E.changed=0;
+                setStatusMessage("%d bytes written on the disk", len);
+                return;
+            }
+        }
+        close(fd);
+    }
+    free(buf);
+    setStatusMessage("Can't save! Error: %s", strerror(errno));
+}

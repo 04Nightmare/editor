@@ -4,6 +4,7 @@
 
 int CxToRxConvert(editorRow *row, int cx);
 void editorOpen(char *filename);
-void editorInsertChar(int c);
+void editorWriteChar(int c);
+void editorSave();
 
 #endif

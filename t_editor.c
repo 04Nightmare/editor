@@ -17,12 +17,12 @@
 #include "statusBar.h"
 
 #define EDITOR_VERSION "v1.0"
-
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 struct editorConfig E;
 
 enum editorKey {
+	BACKSPACE = 127,
 	ARROW_LEFT = 1000,
 	ARROW_RIGHT,
 	ARROW_UP,
@@ -247,12 +247,25 @@ void editorMoveCursor(int key) {
 }
 
 void editorKeyPress() {
+	static int quit_times = CONFIRM_QUIT;
 	int c = editorReadKey();
 	switch (c){
+		case '\r':
+			break;
+
 		case CTRL_KEY('q'):
+			if(quit_times && E.changed > 0){
+				setStatusMessage("WARNING!! Unsaved changes. Save before quiting or Press Ctrl-Q %d more times to quit without saving", quit_times);
+				quit_times--;
+				return;
+			}
 			write(STDOUT_FILENO, "\x1b[2J", 4);
-        		write(STDOUT_FILENO, "\x1b[H", 3);
+        	write(STDOUT_FILENO, "\x1b[H", 3);
 			exit(0);
+			break;
+
+		case CTRL_KEY('s'):
+			editorSave();
 			break;
 
 		case HOME_KEY:
@@ -262,6 +275,12 @@ void editorKeyPress() {
 			if(E.cy < E.numrows)
 				E.cx = E.row[E.cy].size;
 			break;
+
+		case BACKSPACE:
+		case CTRL_KEY('h'):
+		case DEL_KEY:
+			break;	
+
 		case PAGE_UP:
 		case PAGE_DOWN:   //maybe also implement here later for up down.
 		case ARROW_UP:
@@ -270,9 +289,15 @@ void editorKeyPress() {
 		case ARROW_RIGHT:
 			editorMoveCursor(c);
 			break;
+
+		case CTRL_KEY('l'):
+		case '\x1b':
+			break;
+
 		default:
-			editorInsertChar(c);
+			editorWriteChar(c);
 	}
+	quit_times = CONFIRM_QUIT;
 }
 
 
@@ -284,6 +309,7 @@ void initialEditor() {
 	E.coloffset = 0;
 	E.numrows = 0;
 	E.row = NULL;
+	E.changed = 0;
 	E.filename = NULL;
 	E.statmessage[0] = '\0';
 	E.statmessage_time = 0;
@@ -298,7 +324,7 @@ int main(int argc, char *argv[]) {
 	if (argc >= 2){
 		editorOpen(argv[1]);
 	}
-	setStatusMessage("HELP: Ctrl-Q = quit");
+	setStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit");
 
 	while (1){
 		editorRefreshScreen();

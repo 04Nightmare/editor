@@ -9,7 +9,7 @@
 void drawStatusBar(struct abuffer *ab){
     appendBuffer(ab, "\x1b[7m", 4);
     char status[80], rstatus[80];
-    int len = snprintf(status, sizeof(status), "%.20s - %d lines", E.filename ? E.filename : "[no name]", E.numrows);
+    int len = snprintf(status, sizeof(status), "%.20s - %d lines %s", E.filename ? E.filename : "[no name]", E.numrows, E.changed ? "(modified)" : "");
     int rlen = snprintf(rstatus, sizeof(rstatus), "%d - %d", E.cy+1, E.numrows);
     if (len > E.screencols) len = E.screencols;
     appendBuffer(ab, status, len);    
