@@ -47,10 +47,11 @@ void editorUpdateRow(editorRow *row) {
     row->rsize = index;
 }
 
-void editorAppendRow(char *s, size_t len){
+void editorAppendRow(int index, char *s, size_t len){
+    if(index < 0 || index > E.numrows) return;
     E.row = realloc(E.row, sizeof(editorRow) * (E.numrows + 1));
+    memmove(&E.row[index + 1], &E.row[index], sizeof(editorRow) * (E.numrows - index));
 
-    int index = E.numrows;
     E.row[index].size = len;
     E.row[index].chars = malloc(len + 1);
     memcpy(E.row[index].chars, s, len);
@@ -76,7 +77,7 @@ void editorOpen(char *filename) {
     while ((linelength = getline(&line, &linecap, fd)) != -1) {
         while (linelength > 0 && (line[linelength -1] == '\n' || line[linelength -1] == '\r'))
             linelength--;
-        editorAppendRow(line, linelength);
+        editorAppendRow(E.numrows, line, linelength);
     }
     free(line);
     fclose(fd);
@@ -84,7 +85,7 @@ void editorOpen(char *filename) {
 }
 
 
-//Write character in file..
+//Write in file..
 
 void insertCharInRow(editorRow *row, int insertAt, int c){
     if (insertAt < 0 || insertAt > row->size) insertAt = row->size;
@@ -98,10 +99,72 @@ void insertCharInRow(editorRow *row, int insertAt, int c){
 
 void editorWriteChar(int c) {
     if (E.cy == E.numrows){
-        editorAppendRow("", 0);
+        editorAppendRow(E.numrows, "", 0);
     }
     insertCharInRow(&E.row[E.cy], E.cx, c);
     E.cx++;
+}
+
+void editorInsertNewLine(){
+    if(E.cx == 0){
+        editorAppendRow(E.cy, "", 0);
+    }else{
+        editorRow *row = &E.row[E.cy];
+        editorAppendRow(E.cy + 1, &row->chars[E.cx], row->size - E.cx);
+        row = &E.row[E.cy];
+        row->size = E.cx;
+        row->chars[row->size] = '\0';
+        editorUpdateRow(row);
+    }
+    E.cy++;
+    E.cx=0;
+}
+
+//Delete from file.
+
+void delCharFromRow(editorRow *row, int delAt){
+    if(delAt < 0 || delAt >= row->size) return;
+    memmove(&row->chars[delAt], &row->chars[delAt+1], row->size-delAt);
+    row->size--;
+    editorUpdateRow(row);
+    E.changed++;
+}
+
+void freeRow(editorRow *row){
+    free(row->render);
+    free(row->chars);
+}
+
+void editorDelRow(int delAt){
+    if(delAt < 0 || delAt >= E.numrows) return;
+    freeRow(&E.row[delAt]);
+    memmove(&E.row[delAt], &E.row[delAt+1], sizeof(editorRow)*(E.numrows-delAt-1));
+    E.numrows--;
+    E.changed++;
+}
+
+void editorAppendStringInRow(editorRow *row, char *s, size_t len){
+    row->chars = realloc(row->chars, row->size + len + 1);
+    memcpy(&row->chars[row->size], s, len);
+    row->size += len;
+    row->chars[row->size] = '\0';
+    editorUpdateRow(row);
+    E.changed++;
+}
+
+void editorDelChar(){
+    if (E.cy == E.numrows) return;
+    if (E.cx == 0 && E.cy == 0) return;
+    editorRow *row = &E.row[E.cy];
+    if(E.cx > 0){
+        delCharFromRow(row, E.cx-1);
+        E.cx--;
+    }else{
+        E.cx = E.row[E.cy-1].size;
+        editorAppendStringInRow(&E.row[E.cy-1], row->chars, row->size);
+        editorDelRow(E.cy);
+        E.cy--;
+    }
 }
 
 

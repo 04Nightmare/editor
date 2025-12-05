@@ -251,6 +251,7 @@ void editorKeyPress() {
 	int c = editorReadKey();
 	switch (c){
 		case '\r':
+			editorInsertNewLine();
 			break;
 
 		case CTRL_KEY('q'):
@@ -279,6 +280,8 @@ void editorKeyPress() {
 		case BACKSPACE:
 		case CTRL_KEY('h'):
 		case DEL_KEY:
+			if(c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+			editorDelChar();
 			break;	
 
 		case PAGE_UP:
