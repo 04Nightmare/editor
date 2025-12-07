@@ -17,22 +17,8 @@
 #include "statusBar.h"
 
 #define EDITOR_VERSION "v1.0"
-#define CTRL_KEY(k) ((k) & 0x1f)
 
 struct editorConfig E;
-
-enum editorKey {
-	BACKSPACE = 127,
-	ARROW_LEFT = 1000,
-	ARROW_RIGHT,
-	ARROW_UP,
-	ARROW_DOWN,
-	DEL_KEY,
-	HOME_KEY,
-	END_KEY,
-	PAGE_UP,
-	PAGE_DOWN,
-};
 
 
 void disableRawMode(){
@@ -269,6 +255,10 @@ void editorKeyPress() {
 			editorSave();
 			break;
 
+		case CTRL_KEY('r'):
+			editorRename();
+			break;
+
 		case HOME_KEY:
 			E.cx = 0;
 			break;
@@ -327,7 +317,7 @@ int main(int argc, char *argv[]) {
 	if (argc >= 2){
 		editorOpen(argv[1]);
 	}
-	setStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit");
+	setStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-R = rename");
 
 	while (1){
 		editorRefreshScreen();

@@ -15,6 +15,7 @@
 #include "errorHandle.h"
 
 extern void setStatusMessage(const char *fmt, ...);
+extern char *setPrompt(char *prompt);
 
 int CxToRxConvert(editorRow *row, int cx){
     int rx = 0;
@@ -167,7 +168,6 @@ void editorDelChar(){
     }
 }
 
-
 char *editorRowsToString(int *bufferlen){
     int totalLen = 0;
     int j;
@@ -187,7 +187,13 @@ char *editorRowsToString(int *bufferlen){
 }
 
 void editorSave(){
-    if(E.filename == NULL) return;
+    if(E.filename == NULL) {
+        E.filename = setPrompt("Save as: %s (ESC to cancel)");
+        if(E.filename == NULL){
+            setStatusMessage("Save aborted");
+            return;
+        }
+    }
     int len;
     char *buf = editorRowsToString(&len);
     int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
@@ -205,4 +211,19 @@ void editorSave(){
     }
     free(buf);
     setStatusMessage("Can't save! Error: %s", strerror(errno));
+}
+
+void editorRename(){
+    char *oldname = strdup(E.filename);
+    char *newname = setPrompt("Rename file: %s (ESC to cancel)");
+    if(newname == NULL){
+        setStatusMessage("Rename aborted");
+        return;
+    }
+    free(E.filename);
+    E.filename = newname;
+    editorSave();
+    setStatusMessage("File renamed to %s", newname);
+    remove(oldname);
+    free(oldname);
 }

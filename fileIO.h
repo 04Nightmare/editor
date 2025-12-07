@@ -8,5 +8,6 @@ void editorWriteChar(int c);
 void editorDelChar();
 void editorInsertNewLine();
 void editorSave();
+void editorRename();
 
 #endif
