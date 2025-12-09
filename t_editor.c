@@ -20,6 +20,7 @@
 
 struct editorConfig E;
 
+int lastKeyPressed = 0;
 
 void disableRawMode(){
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.termi_settings) == -1)
@@ -234,7 +235,8 @@ void editorMoveCursor(int key) {
 
 void editorKeyPress() {
 	static int quit_times = CONFIRM_QUIT;
-	int c = editorReadKey();
+	lastKeyPressed = editorReadKey();
+	int c = lastKeyPressed;
 	switch (c){
 		case '\r':
 			editorInsertNewLine();
@@ -253,6 +255,10 @@ void editorKeyPress() {
 
 		case CTRL_KEY('s'):
 			editorSave();
+			break;
+
+		case CTRL_KEY('f'):
+			editorFind();
 			break;
 
 		case CTRL_KEY('r'):
@@ -317,7 +323,7 @@ int main(int argc, char *argv[]) {
 	if (argc >= 2){
 		editorOpen(argv[1]);
 	}
-	setStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-R = rename");
+	setStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-R = rename | Ctrl-F = find");
 
 	while (1){
 		editorRefreshScreen();

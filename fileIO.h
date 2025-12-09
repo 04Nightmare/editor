@@ -9,5 +9,6 @@ void editorDelChar();
 void editorInsertNewLine();
 void editorSave();
 void editorRename();
+void editorFind();
 
 #endif

@@ -13,6 +13,8 @@
 extern void editorRefreshScreen();
 extern int editorReadKey();
 
+extern int lastKeyPressed;
+
 void drawStatusBar(struct abuffer *ab){
     appendBuffer(ab, "\x1b[7m", 4);
     char status[80], rstatus[80];
@@ -54,7 +56,7 @@ void drawMessageInStatbar(struct abuffer *ab){
 char *setPrompt(char *prompt){
     size_t bufsize = 128, buflen;
     char *buf;
-    if(E.filename == NULL){
+    if(E.filename == NULL || lastKeyPressed == CTRL_KEY('f')){
         buflen = 0;
         buf = malloc(bufsize);
         buf[0] = '\0';

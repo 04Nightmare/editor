@@ -1,3 +1,4 @@
 .t_editor.c.swp
 t_editor
 *.txt
+.vscode

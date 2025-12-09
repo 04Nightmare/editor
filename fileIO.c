@@ -28,6 +28,19 @@ int CxToRxConvert(editorRow *row, int cx){
     return rx;
 }
 
+int RxToCxConvert(editorRow *row, int rx){
+    int cursor_rx = 0;
+    int cx;
+    for(cx = 0; cx < row->size; cx++){
+        if(row->chars[cx] == '\t'){
+            cursor_rx = cursor_rx + (TAB_STOP_LENGTH - 1) - (cursor_rx % TAB_STOP_LENGTH);
+        }
+        cursor_rx++;
+        if(cursor_rx > rx) return cx;
+    }
+    return cx;
+}
+
 void editorUpdateRow(editorRow *row) {
     int tabs = 0;
     for(int j = 0; j < row->size; j++){
@@ -168,6 +181,8 @@ void editorDelChar(){
     }
 }
 
+//Save to file, rename file.
+
 char *editorRowsToString(int *bufferlen){
     int totalLen = 0;
     int j;
@@ -226,4 +241,21 @@ void editorRename(){
     setStatusMessage("File renamed to %s", newname);
     remove(oldname);
     free(oldname);
+}
+
+void editorFind(){
+    char *query = setPrompt("Search: %s (ESC to cancel)");
+    if (query == NULL) return;
+    int i;
+    for(i = 0; i < E.numrows; i++){
+        editorRow *row = &E.row[i];
+        char *match = strstr(row->render, query);
+        if (match){
+            E.cy = i;
+            E.cx = RxToCxConvert(row, match - row->render);
+            E.rowoffset = E.numrows;
+            break;
+        }
+    }
+    free(query);
 }
