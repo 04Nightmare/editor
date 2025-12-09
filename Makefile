@@ -7,4 +7,6 @@ t_editor: t_editor.c
 
 
 run: t_editor
-	./t_editor
+	clear
+	./t_editor something.txt
+	clear

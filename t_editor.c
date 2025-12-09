@@ -135,8 +135,15 @@ void editorDrawRows(struct abuffer *ab) {
 			int len = E.row[filerow].rsize - E.coloffset;
 			if (len < 0) len = 0;
 			if (len > E.screencols) len = E.screencols;
-			if (len > 0 && E.row[filerow].render){
-				appendBuffer(ab, E.row[filerow].render + E.coloffset, len); //or just use a reference like &E.row[filerow].chars[E.coloffset]
+			char *c = &E.row[filerow].render[E.coloffset];
+			for(int j = 0; j < len; j++){
+				if(isdigit(c[j])){
+					appendBuffer(ab, "\x1b[31m", 5);
+					appendBuffer(ab, &c[j], 1);
+					appendBuffer(ab, "\x1b[39m", 5);
+				}else{
+					appendBuffer(ab, &c[j], 1);
+				}
 			}
 		}
 
