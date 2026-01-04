@@ -12,6 +12,7 @@ typedef struct editorRow {
     int rsize;
     char *chars;
     char *render;
+	unsigned char *highlight;
 }editorRow;
 
 typedef struct editorConfig{

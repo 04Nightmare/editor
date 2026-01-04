@@ -74,6 +74,7 @@ void editorAppendRow(int index, char *s, size_t len){
 
     E.row[index].rsize = 0;
     E.row[index].render = NULL;
+    E.row[index].highlight = NULL;
     editorUpdateRow(&E.row[index]);
     E.changed++;
 }
@@ -147,6 +148,7 @@ void delCharFromRow(editorRow *row, int delAt){
 void freeRow(editorRow *row){
     free(row->render);
     free(row->chars);
+    free(row->highlight); //start form here.
 }
 
 void editorDelRow(int delAt){
@@ -228,6 +230,10 @@ void editorSave(){
     setStatusMessage("Can't save! Error: %s", strerror(errno));
 }
 
+
+// If it works, it works. Nobody needs to know.
+// The user will never know. Its working as expected.
+// but a developer will spot it.
 void editorRename(){
     char *oldname = strdup(E.filename);
     char *newname = setPrompt("Rename file: %s (ESC to cancel)");

@@ -8,5 +8,5 @@ t_editor: t_editor.c
 
 run: t_editor
 	clear
-	./t_editor something.txt
+	./t_editor $(ARGS) 
 	clear
